@@ -1,0 +1,6 @@
+venv/
+prompts/
+instance/
+static/
+*.pyc
+__pycache__/

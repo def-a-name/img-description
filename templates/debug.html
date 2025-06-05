@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>图片AI描述-Debug</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: sans-serif;
+            overflow: hidden;
+        }
+        body {
+            display: flex;
+        }
+        .column {
+            width: 50%;
+            height: 100vh;
+            padding: 1rem;
+            box-sizing: border-box;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.9em;
+        }
+        th, td {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+        }
+        th {
+            background: #eee;
+        }
+        h2 {
+            margin-top: 0;
+            padding-bottom: 0.5rem;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="column">
+        <h2>User Requests</h2>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Uploaded At</th>
+                <th>Requested At</th>
+                <th>Status Code</th>
+                <th>Error Message</th>
+            </tr>
+            {% for r in requests %}
+            <tr>
+                <td>{{ r.id }}</td>
+                <td>{{ r.upload_time }}</td>
+                <td>{{ r.request_time }}</td>
+                <td>{{ r.status_code }}</td>
+                <td>{{ r.error_message | truncate(50) }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="column">
+        <h2>AI Responses</h2>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Request ID</th>
+                <th>Responded At</th>
+                <th>Model</th>
+                <th>Description</th>
+                <th>Status Code</th>
+                <th>Error Message</th>
+            </tr>
+            {% for r in responses %}
+            <tr>
+                <td>{{ r.id }}</td>
+                <td>{{ r.request_id }}</td>
+                <td>{{ r.respond_time }}</td>
+                <td>{{ r.model }}</td>
+                <td>{{ r.description | truncate(100) }}</td>
+                <td>{{ r.status_code }}</td>
+                <td>{{ r.error_message | truncate(50) }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

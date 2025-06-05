@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片AI描述</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --error-color: #f44336;
+            --text-color: #333;
+            --light-gray: #f5f5f5;
+            --border-color: #ddd;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .left-panel, .right-panel {
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .left-panel {
+            flex: 1;
+            background-color: #f9f9f9;
+            border-right: 1px solid var(--border-color);
+            position: relative;
+        }
+        .left-panel-footer {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+        }
+        .right-panel {
+            flex: 1;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: hidden;
+        }
+        .right-top-section {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .right-middle-section {
+            flex: 2;
+            margin: 20px 0;
+            overflow-y: auto;
+        }
+        .right-bottom-section {
+            flex: 1;
+            overflow-y: auto;
+            border-top: 1px solid var(--border-color);
+            padding-top: 10px;
+        }
+        h1 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        .upload-container {
+            border: 2px dashed var(--border-color);
+            padding: 30px;
+            text-align: center;
+            border-radius: 8px;
+            background-color: white;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        .upload-container.highlight {
+            border-color: var(--primary-color);
+            background-color: rgba(76, 175, 80, 0.05);
+        }
+        #file-input {
+            display: none;
+        }
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+        .btn-compact {
+            padding: 2px 10px;
+            font-size: 14px;
+            height: auto;
+            line-height: 1.2;
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 400px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: block;
+            margin: 0 auto;
+        }
+        .file-info {
+            margin: 15px 0;
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+        }
+        .prompt-box {
+            margin: 20px 0;
+        }
+        .prompt-textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+        }
+        .prompt-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        .description-box {
+            background-color: var(--light-gray);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid var(--primary-color);
+            min-height: 200px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error-message {
+            color: var(--error-color);
+            margin: 10px 0;
+            text-align: center;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .prompt-history {
+            display: grid;
+            grid-template-rows: repeat(3, 1fr);
+            max-height: 100%;
+            overflow-y: auto;
+        }
+        .history-item {
+            padding: 4px 8px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid #ccc;
+            width: 100%;
+            font-size: 14px;
+            white-space: normal;
+        }
+        .history-item:hover {
+            background-color: #e0e0e0;
+        }
+        .history-prompt {
+            font-weight: bold;
+        }
+        .history-time {
+            font-size: 12px;
+            color: #666;
+        }
+        .used-prompt {
+            font-style: italic;
+            color: #666;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .left-panel {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左栏 - 图片上传与预览 -->
+        <div class="left-panel">
+            <h1>图片上传</h1>
+            
+            <div class="upload-container" id="upload-area">
+                <input type="file" id="file-input" accept="image/*">
+                <button class="btn" id="upload-btn">选择图片</button>
+                <p style="margin-top: 15px; color: #666;">
+                    支持格式: png, jpg, jpeg, gif, webp, bmp | 最大大小: 10MB
+                </p>
+                <div class="error-message" id="error-message"></div>
+            </div>
+            
+            <div id="preview-section" style="display: none;">
+                <div style="text-align: center;">
+                    <img id="preview-image" class="preview-image" src="" alt="预览图片">
+                </div>
+                <div class="file-info">
+                    <strong>文件名: </strong><span id="filename"></span> | 
+                    <strong>格式: </strong><span id="file-ext"></span>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn" id="describe-btn">获取AI描述</button>
+                    <button class="btn btn-secondary" id="reupload-btn">重新上传</button>
+                </div>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p id="loading-text">正在处理...</p>
+            </div>
+
+            <div class="left-panel-footer">
+                <button class="btn" id="debug-btn">详细记录</button>
+            </div>
+
+            <div id="debug-container"></div>
+        </div>
+        
+        <!-- 右栏 - Prompt与描述 -->
+        <div class="right-panel">
+            <h1>AI描述</h1>
+
+            <!-- 占 1/4 的顶部区域 -->
+            <div class="right-top-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label for="prompt-textarea" class="prompt-label" style="margin: 0;">发送给 LLM 的 Prompt:</label>
+                    <button class="btn btn-success btn-compact" id="update-prompt-btn">修改 Prompt</button>
+                </div>
+
+                <div class="prompt-box" style="margin-top: 0;">
+                    <textarea id="prompt-textarea" class="prompt-textarea">{{ default_prompt }}</textarea>
+                </div>
+
+                <div id="used-prompt-container" style="display: none;">
+                    <strong>使用的Prompt: </strong>
+                    <div class="used-prompt" id="used-prompt"></div>
+                </div>
+            </div>
+
+
+            <!-- 占 1/2 的中间区域 -->
+            <div class="right-middle-section">
+                <div class="description-box" id="description">
+                    <p style="color: #999; text-align: center;">上传图片并点击"获取AI描述"按钮</p>
+                </div>
+            </div>
+
+            <!-- 占 1/4 的底部区域 -->
+            <div class="right-bottom-section">
+                <h3>Prompt历史记录</h3>
+                <div id="history-list">
+                    {% for item in prompt_history|reverse %}
+                    <div class="history-item" onclick="useHistoryPrompt('{{ item.prompt }}')">
+                        <div class="history-prompt">{{ item.prompt|truncate(50) }}</div>
+                        <div class="history-time">{{ item.timestamp }}</div>
+                    </div>
+                    {% else %}
+                    <p>暂无历史记录</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM元素
+        const fileInput = document.getElementById('file-input');
+        const uploadBtn = document.getElementById('upload-btn');
+        const uploadArea = document.getElementById('upload-area');
+        const previewSection = document.getElementById('preview-section');
+        const previewImage = document.getElementById('preview-image');
+        const filenameSpan = document.getElementById('filename');
+        const fileExtSpan = document.getElementById('file-ext');
+        const descriptionBox = document.getElementById('description');
+        const describeBtn = document.getElementById('describe-btn');
+        const reuploadBtn = document.getElementById('reupload-btn');
+        const debugBtn = document.getElementById('debug-btn');
+        const repromptBtn = document.getElementById('update-prompt-btn');
+        const promptTextarea = document.getElementById('prompt-textarea');
+        const loadingDiv = document.getElementById('loading');
+        const loadingText = document.getElementById('loading-text');
+        const errorMessage = document.getElementById('error-message');
+        
+        // 当前图片数据和默认prompt
+        let currentImageData = null;
+        const defaultPrompt = `{{ default_prompt }}`;
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileSelect);
+            describeBtn.addEventListener('click', getImageDescription);
+            reuploadBtn.addEventListener('click', resetUpload);
+            debugBtn.addEventListener('click', showDebug);
+            repromptBtn.addEventListener('click', updatePrompt);
+            
+            // 拖放功能
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('dragleave', handleDragLeave);
+            uploadArea.addEventListener('drop', handleDrop);
+        });
+        
+        // 使用历史prompt
+        function useHistoryPrompt(prompt) {
+            promptTextarea.value = prompt;
+        }
+        
+        // 文件选择处理
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+        
+        // 处理文件
+        function processFile(file) {
+            showLoading('正在上传图片...');
+            errorMessage.textContent = '';
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(handleResponse)
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                
+                currentImageData = {
+                    base64: data.img_base64,
+                    ext: data.file_ext,
+                    time: data.upload_time,
+                    name: data.filename
+                };
+                
+                updatePreview(data);
+                hideLoading();
+            })
+            .catch(handleError);
+        }
+        
+        // 验证文件
+        function validateFile(file) {
+            const validTypes = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/webp', 'image/bmp'];
+            if (!validTypes.includes(file.type)) {
+                showError('不支持的文件类型');
+                return false;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                showError('文件太大，请选择小于 10MB 的图片');
+                return false;
+            }
+        }
+        
+        // 更新预览
+        function updatePreview(data) {
+            previewImage.src = `data:image/${data.file_ext};base64,${data.img_base64}`;
+            filenameSpan.textContent = data.filename;
+            fileExtSpan.textContent = data.file_ext;
+            
+            // 重置描述区域
+            descriptionBox.innerHTML = '<p style="color: #999; text-align: center;">点击"获取AI描述"按钮</p>';
+            
+            // 切换界面
+            uploadArea.style.display = 'none';
+            previewSection.style.display = 'block';
+        }
+        
+        function updatePrompt() {
+            const prompt = promptTextarea.value.trim();
+            if (!prompt) {
+                alert('Prompt 不能为空');
+                return;
+            }
+
+            fetch('/save-new-prompt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ prompt: prompt })
+            })
+            .then(handleResponse)
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                fetchPromptHistory();
+            })
+            .catch(handleError);
+        }
+
+        // 获取图片描述
+        function getImageDescription() {
+            if (!currentImageData) {
+                showError('请先上传图片');
+                return;
+            }
+
+            const prompt = promptTextarea.value.trim();
+            if (!prompt) {
+                showError('请输入有效的Prompt');
+                return;
+            }
+
+            showLoading('正在生成AI描述...');
+            describeBtn.disabled = true;
+
+            fetch('/describe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    img_base64: currentImageData.base64,
+                    file_ext: currentImageData.ext,
+                    upload_time: currentImageData.time,
+                    prompt: prompt
+                })
+            })
+            .then(handleResponse)
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+
+                // 显示描述和使用的prompt
+                descriptionBox.innerHTML = data.description.replace(/\n/g, '<br>');
+
+                hideLoading();
+                describeBtn.disabled = false;
+            })
+            .catch(handleError);
+        }
+
+        // 请求把 prompt 保存进历史文件
+        function savePromptToHistory(prompt) {
+            fetch('/save-new-prompt', {
+                method: 'POST',
+                headers: {
+                'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ prompt: prompt }),
+            })
+            .then(handleResponse)
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+            })
+            .catch(handleError);
+        }
+
+        // 刷新 prompt 历史记录
+        function fetchPromptHistory() {
+            fetch('/')
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newHistory = doc.getElementById('history-list').innerHTML;
+                document.getElementById('history-list').innerHTML = newHistory;
+            });
+        }
+        
+        // 重新上传
+        function resetUpload() {
+            fileInput.value = '';
+            currentImageData = null;
+            previewSection.style.display = 'none';
+            uploadArea.style.display = 'block';
+        }
+        
+        function showDebug() {
+            fetch('/debug')
+            .then(response => response.text())
+            .then(
+                window.open('/debug', '_blank')
+            );
+        }
+
+        // 拖放处理函数
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('highlight');
+        }
+        
+        function handleDragLeave() {
+            uploadArea.classList.remove('highlight');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('highlight');
+            
+            if (e.dataTransfer.files.length > 0) {
+                processFile(e.dataTransfer.files[0]);
+            }
+        }
+        
+        // 响应处理
+        function handleResponse(response) {
+            return response.json().then(data => {
+                if (!response.ok) {
+                    throw new Error(data.error);
+                }
+                return data;
+            });
+        }
+        
+        // 错误处理
+        function handleError(error) {
+            hideLoading();
+            describeBtn.disabled = false;
+            showError(error.message);
+            console.error(error);
+        }
+        
+        // 辅助函数
+        function showLoading(text) {
+            loadingText.textContent = text;
+            loadingDiv.style.display = 'block';
+        }
+        
+        function hideLoading() {
+            loadingDiv.style.display = 'none';
+        }
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+        }
+    </script>
+</body>
+</html>
