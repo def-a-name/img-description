@@ -1,11 +1,11 @@
 from route import main_bp
-from db import db
+from db.ops import *
 from config import Config
-from db.models import UserRequest, AiResponse
-from service.api import get_test_description
+from service.api import get_description_local, get_description_error
+from service.api import get_description
 from service.prompt import save_prompt_to_history
 from datetime import datetime
-from flask import render_template, request, jsonify
+from flask import render_template, Response, stream_with_context, request, jsonify
 from werkzeug.utils import secure_filename
 import base64, json
 
@@ -30,17 +30,17 @@ def upload_file():
     time_str = datetime.now().strftime('%Y%m%d %H:%M:%S')
     file = request.files.get('file')
     if not file or file.filename == '':
-        return _error_request('没有选择文件', time_str)
+        return add_error_request(time_str, '没有选择文件')
 
     ext = file.filename.rsplit('.', 1)[-1].lower()
     if ext not in Config.ALLOWED_EXTENSIONS:
-        return _error_request('不支持的文件类型', time_str)
+        return add_error_request(time_str, '不支持的文件类型')
 
     file.seek(0, 2)
     size = file.tell()
     file.seek(0)
     if size > Config.MAX_IMAGE_SIZE:
-        return _error_request('文件太大，请选择小于 10MB 的图片', time_str)
+        return add_error_request(time_str, '文件太大，请选择小于 10MB 的图片')
 
     img_base64 = base64.b64encode(file.read()).decode()
     return jsonify({
@@ -51,47 +51,53 @@ def upload_file():
         'img_base64': img_base64
     })
 
-def _error_request(msg, time):
-    req = UserRequest(upload_time=time, request_time='', status_code=400, error_message=msg)
-    db.session.add(req)
-    db.session.commit()
-    return jsonify({'error': msg}), 400
-
+# @main_bp.route('/describe', methods=['POST'])
+# def describe():
+#     data = request.json
+#     if not all(k in data for k in ['img_base64', 'file_ext', 'prompt', 'upload_time']):
+#         return add_error_request(data.get('upload_time', ''), '缺少必要参数')
+#     req = add_success_request(data['upload_time'])
+    
+#     try:
+#         # res_data = get_description_error(data['img_base64'], data['file_ext'], data['prompt'])
+#         # res_data = get_description_local(data['img_base64'], data['file_ext'], data['prompt'])
+#         res_data = get_description(data['img_base64'], data['file_ext'], data['prompt'])
+        
+#         add_success_response(req.id, res_data['model'], res_data['description'])
+#         return jsonify({
+#             'success': True,
+#             'description': res_data['description'],
+#             'prompt_used': res_data['prompt_used']
+#         })
+#     except Exception as e:
+#         add_error_response(req.id, str(e))
+#         return jsonify({'error': str(e), 'description': 'API 异常，无效描述'}), 500
 @main_bp.route('/describe', methods=['POST'])
 def describe():
-    now = datetime.now().strftime('%Y%m%d %H:%M:%S')
     data = request.json
     if not all(k in data for k in ['img_base64', 'file_ext', 'prompt', 'upload_time']):
-        return _error_request('缺少必要参数', data.get('upload_time', ''))
+        return add_error_request(data.get('upload_time', ''), '缺少必要参数')
+    req = add_success_request(data['upload_time'])
 
-    req = UserRequest(upload_time=data['upload_time'], 
-                      request_time=now, 
-                      status_code=200, 
-                      error_message='')
-    db.session.add(req)
-    db.session.commit()
+    @stream_with_context
+    def event_stream():
+        try:
+            # generator = get_description(data['img_base64'], data['file_ext'], data['prompt'])
+            # generator = get_description_error(data['img_base64'], data['file_ext'], data['prompt'])
+            generator = get_description_local(data['img_base64'], data['file_ext'], data['prompt'])
 
-    try:
-        res_data = get_test_description(data['img_base64'], data['file_ext'], data['prompt'])
-        res_time = datetime.now().strftime('%Y%m%d %H:%M:%S')
-        res = AiResponse(
-            request_id=req.id,
-            respond_time=res_time,
-            model=res_data['model'],
-            description=res_data['description'],
-            status_code=200,
-            error_message=''
-        )
-        db.session.add(res)
-        db.session.commit()
+            model_name = next(generator)
+            full_content = ""
+            for chunk in generator:
+                if chunk:
+                    full_content += chunk[6:]  # 移除 'data: '
+                    yield chunk
+            add_success_response(req.id, model_name, full_content)
+        except Exception as e:
+            add_error_response(req.id, str(e))
+            yield "data: [ERROR]API 异常，无效描述\n\n"
 
-        return jsonify({
-            'success': True,
-            'description': res.description,
-            'prompt_used': res_data['prompt_used']
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    return Response(event_stream(), content_type='text/event-stream')
 
 @main_bp.route('/save-new-prompt', methods=['POST'])
 def save_prompt():
@@ -100,6 +106,5 @@ def save_prompt():
 
 @main_bp.route('/debug', methods=['GET'])
 def debug():
-    reqs = UserRequest.query.order_by(UserRequest.id.desc()).all()
-    resps = AiResponse.query.order_by(AiResponse.id.desc()).all()
+    reqs, resps = get_debug_data()
     return render_template('debug.html', requests=reqs, responses=resps)

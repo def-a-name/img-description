@@ -241,7 +241,7 @@
                 <input type="file" id="file-input" accept="image/*">
                 <button class="btn" id="upload-btn">选择图片</button>
                 <p style="margin-top: 15px; color: #666;">
-                    支持格式: png, jpg, jpeg, gif, webp, bmp | 最大大小: 10MB
+                    支持格式: png, jpg, jpeg, jpe, tif, tiff, webp, bmp, heic | 最大大小: 10MB
                 </p>
                 <div class="error-message" id="error-message"></div>
             </div>
@@ -370,7 +370,7 @@
             }
         }
         
-        // 处理文件
+        // 处理图片文件
         function processFile(file) {
             showLoading('正在上传图片...');
             errorMessage.textContent = '';
@@ -399,9 +399,10 @@
             .catch(handleError);
         }
         
-        // 验证文件
+        // 验证图片文件
         function validateFile(file) {
-            const validTypes = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/webp', 'image/bmp'];
+            const validTypes = ['image/png', 'image/jpg', 'image/jpeg', 'image/jpe', 
+                                'image/tif', 'image/tiff', 'image/webp', 'image/bmp', 'image/heic'];
             if (!validTypes.includes(file.type)) {
                 showError('不支持的文件类型');
                 return false;
@@ -412,20 +413,17 @@
             }
         }
         
-        // 更新预览
+        // 更新图片预览
         function updatePreview(data) {
             previewImage.src = `data:image/${data.file_ext};base64,${data.img_base64}`;
             filenameSpan.textContent = data.filename;
             fileExtSpan.textContent = data.file_ext;
-            
-            // 重置描述区域
             descriptionBox.innerHTML = '<p style="color: #999; text-align: center;">点击"获取AI描述"按钮</p>';
-            
-            // 切换界面
             uploadArea.style.display = 'none';
             previewSection.style.display = 'block';
         }
         
+        // 更新 prompt 文字
         function updatePrompt() {
             const prompt = promptTextarea.value.trim();
             if (!prompt) {
@@ -466,27 +464,45 @@
 
             fetch('/describe', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     img_base64: currentImageData.base64,
                     file_ext: currentImageData.ext,
                     upload_time: currentImageData.time,
                     prompt: prompt
                 })
-            })
-            .then(handleResponse)
-            .then(data => {
-                if (data.error) throw new Error(data.error);
+            }).then(response => {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                descriptionBox.innerHTML = '';
 
-                // 显示描述和使用的prompt
-                descriptionBox.innerHTML = data.description.replace(/\n/g, '<br>');
+                function read() {
+                    return reader.read().then(({ done, value }) => {
+                        if (done) {
+                            hideLoading();
+                            describeBtn.disabled = false;
+                            return;
+                        }
+                        const chunk = decoder.decode(value, { stream: true });
+                        chunk.split('\n\n').forEach(block => {
+                            const line = block.trim();
+                            if (line.startsWith('data: ')) {
+                                const text = line.slice(6);
+                                if (text.startsWith('[ERROR]')) {
+                                    descriptionBox.innerHTML = text.slice(7).replace(/\n/g, '<br>');
+                                    hideLoading();
+                                    describeBtn.disabled = false;
+                                    return;
+                                }
+                                descriptionBox.innerHTML += text.replace(/\n/g, '<br>');
+                            }
+                        });
+                        return read();
+                    });
+                }
 
-                hideLoading();
-                describeBtn.disabled = false;
-            })
-            .catch(handleError);
+                return read();
+            }).catch(handleError);
         }
 
         // 请求把 prompt 保存进历史文件
