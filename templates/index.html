@@ -179,7 +179,7 @@
         }
         .error-message {
             color: var(--error-color);
-            margin: 10px 0;
+            margin-bottom: 10px;
             text-align: center;
         }
         .action-buttons {
@@ -203,6 +203,7 @@
             width: 100%;
             font-size: 14px;
             white-space: normal;
+            position: relative;
         }
         .history-item:hover {
             background-color: #e0e0e0;
@@ -214,6 +215,11 @@
         .history-time {
             font-size: 12px;
             color: #666;
+        }
+        .del-prompt-btn {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
         }
         .used-prompt {
             font-style: italic;
@@ -240,13 +246,13 @@
         <div class="left-panel">
             <h1>图片上传</h1>
             
+            <div class="error-message" id="error-message"></div>
             <div class="upload-container" id="upload-area">
                 <input type="file" id="file-input" accept="image/*">
                 <button class="btn" id="upload-btn">选择图片</button>
                 <p style="margin-top: 15px; color: #666;">
                     支持格式: png, jpg, jpeg, jpe, tif, tiff, webp, bmp, heic | 最大大小: 10MB
                 </p>
-                <div class="error-message" id="error-message"></div>
             </div>
             
             <div id="preview-section" style="display: none;">
@@ -310,9 +316,10 @@
                 <h3>Prompt历史记录</h3>
                 <div id="history-list">
                     {% for item in prompt_history|reverse %}
-                    <div class="history-item">
+                    <div class="history-item", data-timestamp="{{ item.timestamp }}">
                         <div class="history-prompt">{{ item.prompt }}</div>
                         <div class="history-time">{{ item.timestamp }}</div>
+                        <button class="del-prompt-btn">x</button>
                     </div>
                     {% else %}
                     <p>暂无历史记录</p>
@@ -363,11 +370,16 @@
 
             document.getElementById('history-list').addEventListener('click', e => {
                 const item = e.target.closest('.history-item');
-                if (item) {
+                
+                if (item && e.target.className !== 'del-prompt-btn') {
                     const prompt = item.querySelector('.history-prompt')?.textContent?.trim();
                     if (prompt) {
                         promptTextarea.value = prompt;
                     }
+                }
+
+                if (e.target.classList.contains('del-prompt-btn')) {
+                    deletePromptRecord(item);
                 }
             });
         });
@@ -557,6 +569,22 @@
             });
         }
         
+        function deletePromptRecord(item) {
+            fetch('/delete-prompt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ timestamp: item.getAttribute('data-timestamp') })
+            })
+            .then(handleResponse)
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                item.remove();
+            })
+            .catch(handleError);
+        }
+
         function showDebug() {
             fetch('/debug')
             .then(response => response.text())

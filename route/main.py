@@ -3,7 +3,7 @@ from db.ops import *
 from config import Config
 from service.api import get_description_local, get_description_error
 from service.api import get_description
-from service.prompt import save_prompt_to_history
+from service.prompt import save_prompt_to_history, delete_prompt_record
 from service.token import img_token_calculate
 from datetime import datetime
 from flask import render_template, Response, stream_with_context, request, jsonify
@@ -89,8 +89,11 @@ def describe():
 
 @main_bp.route('/save-new-prompt', methods=['POST'])
 def save_prompt():
-    save_prompt_to_history(request.json['prompt'])
-    return jsonify({'success': True})
+    return save_prompt_to_history(request.json['prompt'])
+
+@main_bp.route('/delete-prompt', methods=['POST'])
+def delete_prompt():
+    return delete_prompt_record(request.json['timestamp'])
 
 @main_bp.route('/debug', methods=['GET'])
 def debug():
