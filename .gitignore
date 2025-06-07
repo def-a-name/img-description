@@ -1,6 +1,6 @@
 venv/
 prompts/
 instance/
-static/
+static/test_imgs/
 *.pyc
 __pycache__/

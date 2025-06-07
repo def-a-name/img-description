@@ -6,6 +6,7 @@ class UserRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     upload_time = db.Column(db.String(32))
     request_time = db.Column(db.String(32))
+    token_count = db.Column(db.Integer)
     status_code = db.Column(db.Integer)
     error_message = db.Column(db.Text, default='')
 
@@ -18,6 +19,7 @@ class AiResponse(db.Model):
     respond_time = db.Column(db.String(32))
     model = db.Column(db.String(32))
     description_compressed = db.Column(db.LargeBinary)  # 使用压缩后的字段
+    token_count = db.Column(db.Integer)
     status_code = db.Column(db.Integer)
     error_message = db.Column(db.Text, default='')
 

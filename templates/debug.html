@@ -36,18 +36,29 @@
         h2 {
             margin-top: 0;
             padding-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .token-summary {
+            font-size: 0.9em;
+            font-weight: normal;
+            color: #666;
         }
     </style>
-
 </head>
 <body>
     <div class="column">
-        <h2>User Requests</h2>
+        <h2>
+            <span>User Requests</span>
+            <span class="token-summary">Total tokens sent: {{ requests | sum(attribute='token_count') }}</span>
+        </h2>
         <table>
             <tr>
                 <th>ID</th>
                 <th>Uploaded At</th>
                 <th>Requested At</th>
+                <th>Tokens Sent</th>
                 <th>Status Code</th>
                 <th>Error Message</th>
             </tr>
@@ -56,14 +67,18 @@
                 <td>{{ r.id }}</td>
                 <td>{{ r.upload_time }}</td>
                 <td>{{ r.request_time }}</td>
+                <td>{{ r.token_count }}</td>
                 <td>{{ r.status_code }}</td>
-                <td>{{ r.error_message | truncate(50) }}</td>
+                <td>{{ r.error_message }}</td>
             </tr>
             {% endfor %}
         </table>
     </div>
     <div class="column">
-        <h2>AI Responses</h2>
+        <h2>
+            <span>AI Responses</span>
+            <span class="token-summary">Total tokens received: {{ responses | sum(attribute='token_count') }}</span>
+        </h2>
         <table>
             <tr>
                 <th>ID</th>
@@ -71,6 +86,7 @@
                 <th>Responded At</th>
                 <th>Model</th>
                 <th>Description</th>
+                <th>Tokens received</th>
                 <th>Status Code</th>
                 <th>Error Message</th>
             </tr>
@@ -80,9 +96,10 @@
                 <td>{{ r.request_id }}</td>
                 <td>{{ r.respond_time }}</td>
                 <td>{{ r.model }}</td>
-                <td>{{ r.description | truncate(100) }}</td>
+                <td>{{ r.description | truncate(200) }}</td>
+                <td>{{ r.token_count }}</td>
                 <td>{{ r.status_code }}</td>
-                <td>{{ r.error_message | truncate(50) }}</td>
+                <td>{{ r.error_message }}</td>
             </tr>
             {% endfor %}
         </table>

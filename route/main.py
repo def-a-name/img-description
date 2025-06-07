@@ -4,9 +4,11 @@ from config import Config
 from service.api import get_description_local, get_description_error
 from service.api import get_description
 from service.prompt import save_prompt_to_history
+from service.token import img_token_calculate
 from datetime import datetime
 from flask import render_template, Response, stream_with_context, request, jsonify
 from werkzeug.utils import secure_filename
+from io import BytesIO
 import base64, json
 
 @main_bp.route('/')
@@ -36,63 +38,49 @@ def upload_file():
     if ext not in Config.ALLOWED_EXTENSIONS:
         return add_error_request(time_str, '不支持的文件类型')
 
-    file.seek(0, 2)
-    size = file.tell()
-    file.seek(0)
-    if size > Config.MAX_IMAGE_SIZE:
+    file_bytes = file.read()
+    if len(file_bytes) > Config.MAX_IMAGE_SIZE:
         return add_error_request(time_str, '文件太大，请选择小于 10MB 的图片')
+    
+    img_stream = BytesIO(file_bytes)
+    try:
+        token_cnt = img_token_calculate(img_stream)
+    except Exception as e:
+        return add_error_request(time_str, f'无法识别图像尺寸: {str(e)}')
 
-    img_base64 = base64.b64encode(file.read()).decode()
+    img_base64 = base64.b64encode(file_bytes).decode()
     return jsonify({
         'success': True,
         'upload_time': time_str,
         'filename': secure_filename(file.filename),
         'file_ext': ext,
-        'img_base64': img_base64
+        'img_base64': img_base64,
+        'token_cnt': token_cnt
     })
 
-# @main_bp.route('/describe', methods=['POST'])
-# def describe():
-#     data = request.json
-#     if not all(k in data for k in ['img_base64', 'file_ext', 'prompt', 'upload_time']):
-#         return add_error_request(data.get('upload_time', ''), '缺少必要参数')
-#     req = add_success_request(data['upload_time'])
-    
-#     try:
-#         # res_data = get_description_error(data['img_base64'], data['file_ext'], data['prompt'])
-#         # res_data = get_description_local(data['img_base64'], data['file_ext'], data['prompt'])
-#         res_data = get_description(data['img_base64'], data['file_ext'], data['prompt'])
-        
-#         add_success_response(req.id, res_data['model'], res_data['description'])
-#         return jsonify({
-#             'success': True,
-#             'description': res_data['description'],
-#             'prompt_used': res_data['prompt_used']
-#         })
-#     except Exception as e:
-#         add_error_response(req.id, str(e))
-#         return jsonify({'error': str(e), 'description': 'API 异常，无效描述'}), 500
 @main_bp.route('/describe', methods=['POST'])
 def describe():
     data = request.json
-    if not all(k in data for k in ['img_base64', 'file_ext', 'prompt', 'upload_time']):
+    if not all(k in data for k in ['img_base64', 'file_ext', 'prompt', 'upload_time', 'token_cnt']):
         return add_error_request(data.get('upload_time', ''), '缺少必要参数')
-    req = add_success_request(data['upload_time'])
+    req = add_success_request(data['upload_time'], data['token_cnt'])
 
     @stream_with_context
     def event_stream():
         try:
-            # generator = get_description(data['img_base64'], data['file_ext'], data['prompt'])
+            generator = get_description(data['img_base64'], data['file_ext'], data['prompt'])
             # generator = get_description_error(data['img_base64'], data['file_ext'], data['prompt'])
-            generator = get_description_local(data['img_base64'], data['file_ext'], data['prompt'])
+            # generator = get_description_local(data['img_base64'], data['file_ext'], data['prompt'])
 
             model_name = next(generator)
             full_content = ""
+            token_cnt = 0
             for chunk in generator:
                 if chunk:
                     full_content += chunk[6:]  # 移除 'data: '
+                    token_cnt += 1
                     yield chunk
-            add_success_response(req.id, model_name, full_content)
+            add_success_response(req.id, model_name, full_content, token_cnt)
         except Exception as e:
             add_error_response(req.id, str(e))
             yield "data: [ERROR]API 异常，无效描述\n\n"

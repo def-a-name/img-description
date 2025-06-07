@@ -157,6 +157,7 @@
             margin: 20px 0;
             border-left: 4px solid var(--primary-color);
             min-height: 200px;
+            white-space: pre-wrap;
         }
         .loading {
             display: none;
@@ -195,6 +196,7 @@
             overflow-y: auto;
         }
         .history-item {
+            overflow: hidden;
             padding: 4px 8px;
             margin-bottom: 4px;
             border-bottom: 1px solid #ccc;
@@ -207,6 +209,7 @@
         }
         .history-prompt {
             font-weight: bold;
+            pointer-events: none;
         }
         .history-time {
             font-size: 12px;
@@ -281,7 +284,7 @@
             <div class="right-top-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <label for="prompt-textarea" class="prompt-label" style="margin: 0;">发送给 LLM 的 Prompt:</label>
-                    <button class="btn btn-success btn-compact" id="update-prompt-btn">修改 Prompt</button>
+                    <button class="btn btn-success btn-compact" id="save-prompt-btn">保存 Prompt</button>
                 </div>
 
                 <div class="prompt-box" style="margin-top: 0;">
@@ -307,8 +310,8 @@
                 <h3>Prompt历史记录</h3>
                 <div id="history-list">
                     {% for item in prompt_history|reverse %}
-                    <div class="history-item" onclick="useHistoryPrompt('{{ item.prompt }}')">
-                        <div class="history-prompt">{{ item.prompt|truncate(50) }}</div>
+                    <div class="history-item">
+                        <div class="history-prompt">{{ item.prompt }}</div>
                         <div class="history-time">{{ item.timestamp }}</div>
                     </div>
                     {% else %}
@@ -319,7 +322,9 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import * as smd from "{{ url_for('static', filename='js/smd.min.js') }}";
+
         // DOM元素
         const fileInput = document.getElementById('file-input');
         const uploadBtn = document.getElementById('upload-btn');
@@ -332,7 +337,7 @@
         const describeBtn = document.getElementById('describe-btn');
         const reuploadBtn = document.getElementById('reupload-btn');
         const debugBtn = document.getElementById('debug-btn');
-        const repromptBtn = document.getElementById('update-prompt-btn');
+        const promptBtn = document.getElementById('save-prompt-btn');
         const promptTextarea = document.getElementById('prompt-textarea');
         const loadingDiv = document.getElementById('loading');
         const loadingText = document.getElementById('loading-text');
@@ -349,18 +354,23 @@
             describeBtn.addEventListener('click', getImageDescription);
             reuploadBtn.addEventListener('click', resetUpload);
             debugBtn.addEventListener('click', showDebug);
-            repromptBtn.addEventListener('click', updatePrompt);
+            promptBtn.addEventListener('click', savePrompt);
             
             // 拖放功能
             uploadArea.addEventListener('dragover', handleDragOver);
             uploadArea.addEventListener('dragleave', handleDragLeave);
             uploadArea.addEventListener('drop', handleDrop);
+
+            document.getElementById('history-list').addEventListener('click', e => {
+                const item = e.target.closest('.history-item');
+                if (item) {
+                    const prompt = item.querySelector('.history-prompt')?.textContent?.trim();
+                    if (prompt) {
+                        promptTextarea.value = prompt;
+                    }
+                }
+            });
         });
-        
-        // 使用历史prompt
-        function useHistoryPrompt(prompt) {
-            promptTextarea.value = prompt;
-        }
         
         // 文件选择处理
         function handleFileSelect(e) {
@@ -389,8 +399,9 @@
                 currentImageData = {
                     base64: data.img_base64,
                     ext: data.file_ext,
+                    name: data.filename,
                     time: data.upload_time,
-                    name: data.filename
+                    tok: data.token_cnt
                 };
                 
                 updatePreview(data);
@@ -412,6 +423,14 @@
                 return false;
             }
         }
+
+        // 重新上传图片文件
+        function resetUpload() {
+            fileInput.value = '';
+            currentImageData = null;
+            previewSection.style.display = 'none';
+            uploadArea.style.display = 'block';
+        }
         
         // 更新图片预览
         function updatePreview(data) {
@@ -424,7 +443,7 @@
         }
         
         // 更新 prompt 文字
-        function updatePrompt() {
+        function savePrompt() {
             const prompt = promptTextarea.value.trim();
             if (!prompt) {
                 alert('Prompt 不能为空');
@@ -469,16 +488,20 @@
                     img_base64: currentImageData.base64,
                     file_ext: currentImageData.ext,
                     upload_time: currentImageData.time,
+                    token_cnt: currentImageData.tok,
                     prompt: prompt
                 })
             }).then(response => {
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder('utf-8');
+                const renderer = smd.default_renderer(descriptionBox);
+                const parser = smd.parser(renderer);
                 descriptionBox.innerHTML = '';
 
                 function read() {
                     return reader.read().then(({ done, value }) => {
                         if (done) {
+                            smd.parser_end(parser);
                             hideLoading();
                             describeBtn.disabled = false;
                             return;
@@ -489,12 +512,13 @@
                             if (line.startsWith('data: ')) {
                                 const text = line.slice(6);
                                 if (text.startsWith('[ERROR]')) {
-                                    descriptionBox.innerHTML = text.slice(7).replace(/\n/g, '<br>');
+                                    descriptionBox.innerHTML = text.slice(7);
                                     hideLoading();
                                     describeBtn.disabled = false;
                                     return;
                                 }
-                                descriptionBox.innerHTML += text.replace(/\n/g, '<br>');
+                                // descriptionBox.innerHTML += text;
+                                smd.parser_write(parser, text);
                             }
                         });
                         return read();
@@ -533,14 +557,6 @@
             });
         }
         
-        // 重新上传
-        function resetUpload() {
-            fileInput.value = '';
-            currentImageData = null;
-            previewSection.style.display = 'none';
-            uploadArea.style.display = 'block';
-        }
-        
         function showDebug() {
             fetch('/debug')
             .then(response => response.text())
@@ -549,7 +565,6 @@
             );
         }
 
-        // 拖放处理函数
         function handleDragOver(e) {
             e.preventDefault();
             uploadArea.classList.add('highlight');
@@ -568,7 +583,6 @@
             }
         }
         
-        // 响应处理
         function handleResponse(response) {
             return response.json().then(data => {
                 if (!response.ok) {
@@ -578,7 +592,6 @@
             });
         }
         
-        // 错误处理
         function handleError(error) {
             hideLoading();
             describeBtn.disabled = false;
@@ -586,7 +599,6 @@
             console.error(error);
         }
         
-        // 辅助函数
         function showLoading(text) {
             loadingText.textContent = text;
             loadingDiv.style.display = 'block';
