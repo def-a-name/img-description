@@ -7,6 +7,7 @@ img-description 是一个基于 `Python Flask` 框架开发的 Web 应用。用�
 ## 主要特性
 
 - 支持多种图片格式上传`（png | jpg | jpeg | jpe | tif | tiff | webp | bmp | heic）`；
+- 图片上传后以 `base64` 编码暂存在内存中，不缓存到磁盘，减少空间占用和磁盘I/O；
 - 调用阿里云百炼 API，使用 `QWEN-VL` 系列模型；
 - 流式输出结果，并按照 `Markdown` 样式渲染；
 - 自定义 prompt，支持 prompt 历史记录的保存、查看和管理；
@@ -14,7 +15,7 @@ img-description 是一个基于 `Python Flask` 框架开发的 Web 应用。用�
 
 ## 本地运行
 
-1. **克隆项目**
+1. **下载项目**
 
    ```bash
    git clone https://github.com/def-a-name/img-description.git
