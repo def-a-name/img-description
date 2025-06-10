@@ -1,14 +1,17 @@
 from flask import Flask
 from config import Config
-from db import db
-from route.main import main_bp
+import db
+from db.models import user_datastore
+from route import main_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
-db.init_app(app)
 
+db.db.init_app(app)
 with app.app_context():
-    db.create_all()
+    db.db.create_all()
+
+db.security.init_app(app, user_datastore)
 
 app.register_blueprint(main_bp)
 

@@ -1,9 +1,22 @@
+# from db import db, user_datastore
 from db import db
-from db.models import UserRequest, AiResponse
+from db.models import user_datastore
+from db.models import User, UserRequest, AiResponse
 from flask import jsonify
 from datetime import datetime
 
 __all__ = ['add_error_request', 'add_success_request', 'add_error_response', 'add_success_response', 'get_debug_data']
+
+def get_user(name):
+    return User.query.filter_by(username=name).first()
+
+def register_user(name, hashed_passwd):
+    user = user_datastore.create_user(
+        username=name,
+        password=hashed_passwd
+    )
+    db.session.commit()
+    return user
 
 def add_error_request(up_time, msg):
     req = UserRequest(upload_time=up_time, 

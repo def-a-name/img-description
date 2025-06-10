@@ -7,11 +7,13 @@ from service.prompt import save_prompt_to_history, delete_prompt_record
 from service.token import img_token_calculate
 from datetime import datetime
 from flask import render_template, Response, stream_with_context, request, jsonify
+from flask_login import login_required
 from werkzeug.utils import secure_filename
 from io import BytesIO
 import base64, json
 
 @main_bp.route('/')
+@login_required
 def index():
     try:
         with open(Config.PROMPT_HISTORY_FILE, 'r') as f:
@@ -28,6 +30,7 @@ def index():
                            prompt_history=prompt_history)
 
 @main_bp.route('/upload', methods=['POST'])
+@login_required
 def upload_file():
     time_str = datetime.now().strftime('%Y%m%d %H:%M:%S')
     file = request.files.get('file')
@@ -59,6 +62,7 @@ def upload_file():
     })
 
 @main_bp.route('/describe', methods=['POST'])
+@login_required
 def describe():
     data = request.json
     if not all(k in data for k in ['img_base64', 'file_ext', 'prompt', 'upload_time', 'token_cnt']):
@@ -88,14 +92,17 @@ def describe():
     return Response(event_stream(), content_type='text/event-stream')
 
 @main_bp.route('/save-new-prompt', methods=['POST'])
+@login_required
 def save_prompt():
     return save_prompt_to_history(request.json['prompt'])
 
 @main_bp.route('/delete-prompt', methods=['POST'])
+@login_required
 def delete_prompt():
     return delete_prompt_record(request.json['timestamp'])
 
 @main_bp.route('/debug', methods=['GET'])
+@login_required
 def debug():
     reqs, resps = get_debug_data()
     return render_template('debug.html', requests=reqs, responses=resps)
