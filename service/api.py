@@ -20,6 +20,7 @@ def get_description_local(img_base64, file_ext, prompt):
 def get_description_error(img_base64, file_ext, prompt):
     import time
     time.sleep(1)
+    yield "模拟 LLM"
     raise Exception("模拟 API 错误")
 
 def get_description(img_base64, file_ext, prompt):

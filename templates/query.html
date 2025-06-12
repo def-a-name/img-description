@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>查询总记录</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; margin: 0; background: #f9f9f9; }
+        .query-container {
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 16px;
+            background: #fff;
+        }
+        .query {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+        .query:last-child { border-bottom: none; }
+        .query h4 {
+            margin: 0 0 8px 0;
+            color: #333;
+        }
+        .query p {
+            margin: 4px 0;
+            color: #555;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h2>查询记录</h2>
+    <div class="query-container">
+        {% for q in queries %}
+        <div class="query">
+            <h4>#{{ q.id }} - 用户: {{ q.username }} | 模型: {{ q.model }}</h4>
+            <p><strong>上传时间:</strong> {{ q.upload_time }} | <strong>请求时间:</strong> {{ q.request_time }} | <strong>响应时间:</strong> {{ q.respond_time }}</p>
+            <p><strong>Token 使用:</strong> {{ q.token_used }} | <strong>状态码:</strong> {{ q.status_code }}</p>
+            <p><strong>错误信息:</strong> {{ q.error_message or '无' }}</p>
+            <p><strong>描述内容:</strong> {{ q.description.replace('\n', '') }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

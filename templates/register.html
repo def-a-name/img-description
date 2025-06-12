@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>用户注册</title>
     <style>
-        /* 保留你现有的样式 */
         body {
             background-color: #f5f5f5;
             font-family: 'Arial', sans-serif;
@@ -129,6 +128,22 @@
                 {% endif %}
             </div>
 
+            <div id="admin-token-container" class="form-group" style="display: none;">
+                {{ form.admin_token.label }}
+                {{ form.admin_token(class="form-control", id=form.admin_token.id) }}
+                {% if form.admin_token.errors %}
+                    <ul class="error-message">
+                    {% for err in form.admin_token.errors %}
+                        <li>{{ err }}</li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="extra-links">
+                <a href="#" id="show-admin-token">注册为管理员</a>
+            </div>
+
             <button type="submit" class="btn">{{ form.submit.label.text }}</button>
         </form>
 
@@ -136,5 +151,15 @@
             <p>已有账号？<a href="{{ url_for('main.login') }}">立即登录</a></p>
         </div>
     </div>
+
+    <script>
+        document.getElementById('show-admin-token').addEventListener('click', function (e) {
+            e.preventDefault();
+            const container = document.getElementById('admin-token-container');
+            container.style.display = 'block';
+            this.style.display = 'none';
+        });
+    </script>
+
 </body>
 </html>

@@ -23,9 +23,6 @@ class User(db.Model, UserMixin):
     fs_uniquifier = db.Column(db.String(64), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
     roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
 
-    requests = db.relationship('UserRequest', backref='user', lazy=True)
-    queries = db.relationship('Query', backref='user', lazy=True)
-
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
 class UserRequest(db.Model):
@@ -69,7 +66,7 @@ class Query(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) 
 
-    username = db.Column(db.String(64), unique=True, nullable=False)
+    username = db.Column(db.String(64), nullable=False)
     upload_time = db.Column(db.String(32))
     request_time = db.Column(db.String(32))
     respond_time = db.Column(db.String(32))

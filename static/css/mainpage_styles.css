@@ -55,6 +55,12 @@ html, body {
     overflow: hidden;
 }
 
+.right-top-buttons {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
 .right-top-section {
     flex: 1;
     overflow-y: auto;

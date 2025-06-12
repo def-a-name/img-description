@@ -42,7 +42,11 @@
             </div>
 
             <div class="left-panel-footer">
-                <button class="btn" id="debug-btn">详细记录</button>
+                <button class="btn" id="debug-btn">用户记录</button>
+                {% if current_user.has_role('admin') %}
+                <button class="btn" id="query-btn">查询总记录</button>
+                <button class="btn" id="user-manage-btn">用户管理</button>
+                {% endif %}
             </div>
 
             <div id="debug-container"></div>
@@ -51,6 +55,10 @@
         <!-- 右栏 - Prompt与描述 -->
         <div class="right-panel">
             <h1>AI描述</h1>
+
+            <div class="right-top-buttons">
+                <button class="btn" id="logout-btn">登出</button>
+            </div>
 
             <!-- 占 1/4 的顶部区域 -->
             <div class="right-top-section">
@@ -110,6 +118,9 @@
         const describeBtn = document.getElementById('describe-btn');
         const reuploadBtn = document.getElementById('reupload-btn');
         const debugBtn = document.getElementById('debug-btn');
+        const queryBtn = document.getElementById('query-btn');
+        const userManageBtn = document.getElementById('user-manage-btn');
+        const logoutBtn = document.getElementById('logout-btn');
         const promptBtn = document.getElementById('save-prompt-btn');
         const promptTextarea = document.getElementById('prompt-textarea');
         const loadingDiv = document.getElementById('loading');
@@ -127,6 +138,15 @@
             describeBtn.addEventListener('click', getImageDescription);
             reuploadBtn.addEventListener('click', resetUpload);
             debugBtn.addEventListener('click', showDebug);
+            
+            if (queryBtn) {
+                queryBtn.addEventListener('click', showQuery);
+            }
+            if (userManageBtn) {
+                userManageBtn.addEventListener('click', showUserManage);
+            }
+            
+            logoutBtn.addEventListener('click', logout);
             promptBtn.addEventListener('click', savePrompt);
             
             // 拖放功能
@@ -175,10 +195,10 @@
                 if (data.error) throw new Error(data.error);
                 
                 currentImageData = {
-                    base64: data.img_base64,
-                    ext: data.file_ext,
-                    name: data.filename,
                     time: data.upload_time,
+                    name: data.filename,
+                    ext: data.file_ext,
+                    base64: data.img_base64,
                     tok: data.token_cnt
                 };
                 
@@ -352,11 +372,25 @@
         }
 
         function showDebug() {
-            fetch('/debug')
-            .then(response => response.text())
-            .then(
-                window.open('/debug', '_blank')
-            );
+            window.open('/debug', '_blank')
+        }
+
+        function showQuery() {
+            window.open('/query', '_blank')
+        }
+
+        function showUserManage() {
+            window.open('/user-manage', '_blank');
+        }
+
+        function logout() {
+            fetch('/logout')
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                }
+            })
+            .catch(handleError);
         }
 
         function handleDragOver(e) {

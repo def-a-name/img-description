@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>用户管理</title>
+    <style>
+        body { font-family: sans-serif; padding: 40px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        th { background: #f0f0f0; }
+        form.inline { display: inline; margin: 0; }
+        input, button { margin: 2px; padding: 4px; }
+    </style>
+</head>
+<body>
+    <!-- 显示 Flash 消息 -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="margin-bottom: 20px;">
+          {% for category, message in messages %}
+            <div style="padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9; color: {% if category == 'error' %}red{% elif category == 'success' %}green{% else %}#333{% endif %};">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <h2>用户列表</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th><th>用户名</th><th>角色</th><th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.username }}</td>
+                <td>
+                    {% if 'admin' in user.roles | map(attribute='name') | list %}
+                        管理员
+                    {% else %}
+                        普通用户
+                    {% endif %}
+                </td>
+                <td>
+                    <!-- 删除用户 -->
+                    <form method="POST" action="{{ url_for('main.delete_user', user_id=user.id) }}" class="inline">
+                        <button type="submit" 
+                                {% if user.id == current_user.id %}disabled title="当前用户"{% endif %}
+                                onclick="return confirm('确认删除该用户？')">
+                            删除
+                        </button>
+                    </form>
+
+                    <!-- 修改密码 -->
+                    <form method="POST" action="{{ url_for('main.change_password', user_id=user.id) }}" class="inline">
+                        <input type="password" name="new_password" placeholder="新密码" required>
+                        <button type="submit">改密</button>
+                    </form>
+
+                    <!-- 提升为管理员 -->
+                    {% if 'admin' not in user.roles | map(attribute='name') | list %}
+                    <form method="POST" action="{{ url_for('main.promote_user', user_id=user.id) }}" class="inline">
+                        <button type="submit">设为管理员</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>添加新用户</h2>
+    <form method="POST" action="{{ url_for('main.add_user') }}">
+        <input type="text" name="username" placeholder="用户名" required>
+        <input type="password" name="password" placeholder="密码" required>
+        <label>
+            <input type="checkbox" name="is_admin"> 管理员
+        </label>
+        <button type="submit">添加</button>
+    </form>
+</body>
+</html>

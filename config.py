@@ -3,20 +3,13 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     SECRET_KEY = 'def-a-name'
-    SECURITY_PASSWORD_SALT = 'name-a-def'
-    SECURITY_SEND_REGISTER_EMAIL = False
-    SECURITY_LOGIN_URL = '/security-login'
+    SECURITY_JOIN_USER_ROLES = 'roles_users'
     SECURITY_REGISTERABLE = False
-    SECURITY_CONFIRMABLE = False
     SECURITY_RECOVERABLE = False
-    SECURITY_USER_IDENTITY_ATTRIBUTES = [
-        {
-            'username': {
-                'mapper': lambda x: x.strip().lower(),
-                'case_insensitive': True
-            }
-        }
-    ]
+    SECURITY_CONFIRMABLE = False
+    SECURITY_CHANGEABLE = False
+
+    ADMIN_SECRET = 'defaname'
     
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'jpe', 'tif', 'tiff', 'webp', 'bmp', 'heic'}
     MAX_IMAGE_SIZE = 10 * 1024 * 1024   # 限制图片最大为 10MB
