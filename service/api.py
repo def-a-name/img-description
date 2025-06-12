@@ -29,7 +29,7 @@ def get_description(img_base64, file_ext, prompt):
         api_key = os.getenv("DASHSCOPE_API_KEY"),
         base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1",
     )
-    model_name = "qwen-vl-max-latest"
+    model_name = "qwen-vl-max"
 
     # 流式输出
     stream = client.chat.completions.create(

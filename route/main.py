@@ -99,7 +99,7 @@ def describe():
             yield "data: [ERROR]API 异常，无效描述\n\n"
 
         add_query(uid, uname, req.upload_time, req.request_time, res.respond_time, 
-                  model_name, full_content, token_cnt, res.status_code, res.error_message)
+                  model_name, full_content, req.token_count + res.token_count, res.status_code, res.error_message)
 
     return Response(event_stream(), content_type='text/event-stream')
 
@@ -126,4 +126,5 @@ def show_debug():
 @login_required
 def show_query():
     queries = get_queries()
-    return render_template('query.html', queries=queries)
+    token_sum = sum(q.token_used or 0 for q in queries)
+    return render_template('query.html', queries=queries, token_used_total=token_sum)

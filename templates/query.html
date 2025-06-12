@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>查询总记录</title>
+    <title>查询记录</title>
     <style>
         body { font-family: sans-serif; padding: 20px; margin: 0; background: #f9f9f9; }
         .query-container {
@@ -31,7 +31,12 @@
     </style>
 </head>
 <body>
-    <h2>查询记录</h2>
+    <h2>
+        所有查询记录
+        <span style="font-size: 16px; color: #666;">
+            (Token 总计: {{ token_used_total }})
+        </span>
+    </h2>
     <div class="query-container">
         {% for q in queries %}
         <div class="query">
