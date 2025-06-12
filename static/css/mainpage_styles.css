@@ -1,0 +1,325 @@
+:root {
+    --primary-color: #4CAF50;
+    --secondary-color: #2196F3;
+    --error-color: #f44336;
+    --text-color: #333;
+    --light-gray: #f5f5f5;
+    --border-color: #ddd;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    color: var(--text-color);
+    line-height: 1.6;
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+}
+
+.left-panel, .right-panel {
+    flex: 1 1 100%;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.left-panel {
+    flex: 1;
+    background-color: #f9f9f9;
+    border-right: 1px solid var(--border-color);
+    position: relative;
+}
+
+.left-panel-footer {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+}
+
+.right-panel {
+    flex: 1;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.right-top-buttons {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+.right-top-section {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.right-middle-section {
+    flex: 2;
+    margin: 20px 0;
+    overflow-y: auto;
+}
+
+.right-bottom-section {
+    flex: 1;
+    overflow-y: auto;
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+}
+
+h1 {
+    color: var(--primary-color);
+    margin-top: 0;
+}
+
+.upload-container {
+    border: 2px dashed var(--border-color);
+    padding: 30px;
+    text-align: center;
+    border-radius: 8px;
+    background-color: white;
+    margin-bottom: 20px;
+    transition: all 0.3s;
+}
+
+.upload-container.highlight {
+    border-color: var(--primary-color);
+    background-color: rgba(76, 175, 80, 0.05);
+}
+
+#file-input {
+    display: none;
+}
+
+.btn {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+    margin: 5px;
+}
+
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+.btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+}
+
+.btn-compact {
+    padding: 2px 10px;
+    font-size: 14px;
+    height: auto;
+    line-height: 1.2;
+}
+
+.preview-image {
+    max-width: 100%;
+    height: auto;
+    max-height: 400px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: block;
+    margin: 0 auto;
+}
+
+.file-info {
+    margin: 15px 0;
+    color: #666;
+    font-size: 14px;
+    text-align: center;
+}
+
+.prompt-box {
+    margin: 20px 0;
+}
+
+.prompt-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+}
+
+.prompt-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.description-box {
+    background-color: var(--light-gray);
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary-color);
+    min-height: 200px;
+    white-space: pre-wrap;
+}
+
+.loading {
+    display: none;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top: 4px solid var(--primary-color);
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error-message {
+    color: var(--error-color);
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.prompt-history {
+    display: grid;
+    grid-template-rows: repeat(3, 1fr);
+    max-height: 100%;
+    overflow-y: auto;
+}
+
+.history-item {
+    overflow: hidden;
+    padding: 4px 8px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid #ccc;
+    width: 100%;
+    font-size: 14px;
+    white-space: normal;
+    position: relative;
+}
+
+.history-item:hover {
+    background-color: #e0e0e0;
+}
+
+.history-prompt {
+    font-weight: bold;
+    pointer-events: none;
+}
+
+.history-time {
+    font-size: 12px;
+    color: #666;
+}
+
+.del-prompt-btn {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+}
+
+.used-prompt {
+    font-style: italic;
+    color: #666;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+}
+
+/* 响应式样式 */
+@media (max-width: 1024px) {
+    html, body {
+        overflow: auto;
+        height: auto;
+    }
+    .container {
+        height: auto;
+        min-height: 100vh;
+        flex-direction: column;
+    }
+    .left-panel {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .right-panel {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .btn {
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+    .prompt-textarea {
+        font-size: 13px;
+    }
+    .right-middle-section, .right-bottom-section {
+        margin: 10px 0;
+    }
+    .description-box {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn {
+        width: 100%;
+        padding: 10px 0;
+        font-size: 14px;
+    }
+    .action-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .prompt-textarea {
+        min-height: 100px;
+    }
+    .left-panel-footer {
+        position: static;
+        margin-top: 10px;
+    }
+}

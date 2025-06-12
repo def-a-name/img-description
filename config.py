@@ -1,6 +1,16 @@
 class Config:
     SQLALCHEMY_DATABASE_URI = 'sqlite:///database.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
+    SECRET_KEY = 'def-a-name'
+    SECURITY_JOIN_USER_ROLES = 'roles_users'
+    SECURITY_REGISTERABLE = False
+    SECURITY_RECOVERABLE = False
+    SECURITY_CONFIRMABLE = False
+    SECURITY_CHANGEABLE = False
+
+    ADMIN_SECRET = 'defaname'
+    
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'jpe', 'tif', 'tiff', 'webp', 'bmp', 'heic'}
     MAX_IMAGE_SIZE = 10 * 1024 * 1024   # 限制图片最大为 10MB
     TOKEN_PIXEL_SIZE = 28               # 每个图像 token 为 28x28 像素 
