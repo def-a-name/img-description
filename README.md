@@ -30,8 +30,8 @@ img-description 是一个基于 `Python Flask` 框架开发的 Web 应用。用�
    python -m venv venv
    # Linux
    source venv/bin/activate
-   # Windows
-   source venv/Script/activate
+   # Windows Powershell
+   .\venv\Scripts\Activate.ps1
    ```
    ```bash
    python -m pip install -r requirements.txt
